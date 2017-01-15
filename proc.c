@@ -23,7 +23,9 @@ static void wakeup1(void *chan);
 void
 pinit(void)
 {
-  initlock(&ptable.lock, "ptable");
+    frontQ_index = -1;
+    backQ_index = -1;
+    initlock(&ptable.lock, "ptable");
 }
 
 //PAGEBREAK: 32

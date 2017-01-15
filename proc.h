@@ -69,6 +69,11 @@ struct proc {
   int rtime;                    //running time
 };
 
+// this is queue declaration for RRFIFO
+int procQ[NPROC];
+int frontQ_index;
+int backQ_index;
+
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss
