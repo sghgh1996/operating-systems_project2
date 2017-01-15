@@ -180,6 +180,7 @@ UPROGS=\
 	_zombie\
 	_getppid\
 	_waittest\
+	_RRsanity\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
