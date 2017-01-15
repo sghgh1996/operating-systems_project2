@@ -12,10 +12,8 @@ void
 do_test(void)
 {
     int n, pid;
-    int wTime;
-    int rTime;
 
-    printf(1, "3.1 test started.\n\n");
+    printf(1, "\n----------3.1 test started.----------\n\n");
 
     for(n=0; n<N; n++){
         pid = fork();
@@ -23,27 +21,26 @@ do_test(void)
             break;
         if(pid == 0) { // child
             for (int i = 1; i <= print_num; i++) {
-                printf(2, "Child %d prints for the %d time.\n", pid, i);
+                printf(2, " %d : Child %d prints for the %d time.\n", n, getpid(), i);
             }
             exit();
         }
     }
 
-    wait();
-    wait();
-    wait();
-    wait();
-    wait();
-    wait();
-    wait();
-    wait();
-    wait();
-    wait();
-
-    for(; n >= 0; n--){
-        pid = getPerformanceData(&wTime, &rTime);
-        printf(1, "wTime: %d rTime: %d \n",wTime,rTime);
+    printf(2,"\n");
+    
+    int child_pid[10];
+    int wTime[10];
+    int rTime[10];
+    for(int i = 0; i < N; i++){
+        child_pid[i] = getPerformanceData(&wTime[i], &rTime[i]);
     }
+    for(int i = 0; i < N; i++){
+        printf(1, "child : %d  =  wTime: %d rTime: %d \n",
+               child_pid[i], wTime[i], rTime[i]);
+    }
+
+    printf(1, "\n----------3.1 test finished.----------\n\n");
 }
 
 int
