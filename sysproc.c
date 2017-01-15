@@ -99,3 +99,8 @@ int sys_getppid(void){
 }
 
 //end my
+
+//get performance data
+int sys_getPerformanceData(void){
+
+}

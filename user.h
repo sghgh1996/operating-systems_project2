@@ -26,6 +26,8 @@ int uptime(void);
 //my
 int getppid(void);
 //end my
+//get performance data
+int getPerformanceData(int*, int*);
 
 
 

@@ -32,3 +32,5 @@ SYSCALL(uptime)
 //my
 SYSCALL(getppid)
 //end my
+//get performance data
+SYSCALL(getPerformanceData)

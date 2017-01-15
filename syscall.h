@@ -23,3 +23,5 @@
 //my
 #define SYS_getppid 22
 //end my
+//get performance
+#define SYS_getPerformanceData 23
