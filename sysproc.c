@@ -89,3 +89,13 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+
+//my
+int sys_getppid(void){
+
+   return proc->parent->pid;
+}
+
+//end my

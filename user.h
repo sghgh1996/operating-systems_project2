@@ -23,6 +23,11 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+//my
+int getppid(void);
+//end my
+
+
 
 // ulib.c
 int stat(char*, struct stat*);

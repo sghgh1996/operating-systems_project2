@@ -155,6 +155,11 @@ mkfs: mkfs.c fs.h
 # that disk image changes after first build are persistent until clean.  More
 # details:
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
+
+#my
+#i added _getppid\ in below code
+#end my
+
 .PRECIOUS: %.o
 
 UPROGS=\
@@ -173,6 +178,7 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+	_getppid\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
