@@ -102,5 +102,5 @@ int sys_getppid(void){
 
 //get performance data
 int sys_getPerformanceData(void){
-
+  return wait2();
 }
