@@ -53,6 +53,7 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       ticks++;
       if(proc && proc->state == RUNNING){
+//        cprintf("rtime++\n");
         counter++;
         proc->rtime++;
       }
@@ -111,6 +112,7 @@ trap(struct trapframe *tf)
      && tf->trapno == T_IRQ0+IRQ_TIMER
      && counter == QUANTA) {
       counter = 0;
+      cprintf("\nyield\n");
       yield();
   }
   // Check if the process has been killed since we yielded

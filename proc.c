@@ -21,7 +21,7 @@ extern void trapret(void);
 static void wakeup1(void *chan);
 
 int printRRQ = 1; // 1 : prints queue of round robin
-int policy = 1; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
+int policy = 0; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
 
 void
 pinit(void)
@@ -379,7 +379,7 @@ scheduler(void)
 
 
     acquire(&ptable.lock);
-    if(policy == 0){
+    if(policy == 0){ // RR
       // Loop over process table looking for process to run.
       for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE)
@@ -398,7 +398,7 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         proc = 0;
       }
-    } else if(policy == 1) {
+    } else if(policy == 1) { // FIFO RR
       p = getProc(popFromProcQ());
 
       if (p != 0) {
@@ -434,6 +434,34 @@ scheduler(void)
           proc = 0;
         }
       }
+    } else if(policy == 2){ // GRT
+      // look over process table to find the highest valuable process
+      double highest = 1000000000;
+      struct proc *tempProc;
+      for(tempProc = ptable.proc; tempProc < &ptable.proc[NPROC]; tempProc++){
+        if (tempProc->state != RUNNABLE)
+          continue;
+
+        double tempValue =
+                (double)(tempProc->rtime) / (double)(ticks - tempProc->ctime);
+        if(tempValue < highest){
+          p = tempProc;
+        }
+      }
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      swtch(&cpu->scheduler, p->context);
+      switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      proc = 0;
+    } else if(policy == 3) { // 3Q
+
     }
     release(&ptable.lock);
 
@@ -470,12 +498,12 @@ void
 yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
-  if(printRRQ == 1){
-    cprintf("%d", getProcQSize());
-    for (int i = 0; i < getProcQSize(); i++) {
-      cprintf("<%d>  ", popFromProcQ());
-    }
-  }
+//  if(printRRQ == 1){
+//    cprintf("%d", getProcQSize());
+//    for (int i = 0; i < getProcQSize(); i++) {
+//      cprintf("<%d>  ", popFromProcQ());
+//    }
+//  }
   proc->state = RUNNABLE;
   if(policy==1)
     insertToProcQ(proc->pid);
