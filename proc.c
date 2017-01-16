@@ -50,7 +50,7 @@ struct proc* getProc(int pid){
         if(ptable.proc[i].pid == pid)
             return &ptable.proc[i];
     }
-    return null;
+    return 0;
 }
 
 //PAGEBREAK: 32
@@ -367,27 +367,16 @@ void
 scheduler(void)
 {
   struct proc *p;
-  bool foundProc = false;
 
-  for(;;){
+  for(;;) {
     // Enable interrupts on this processor.
     sti();
 
 
     acquire(&ptable.lock);
-    for (int i = frontQ_index; i < backQ_index; ++i) {
-        struct proc *tempProc;
-        tempProc = getProc(i);
-        if(tempProc != null){
+    p = getProc(popFromProcQ());
 
-        }
-    }
-
-    // Loop over process table looking for process to run.
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
+    if (p != 0) {
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -400,6 +389,25 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;
+    } else {
+      // Loop over process table looking for process to run.
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE)
+          continue;
+
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&cpu->scheduler, p->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        proc = 0;
+      }
     }
     release(&ptable.lock);
 
@@ -437,7 +445,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   proc->state = RUNNABLE;
-    insertToProcQ(proc->pid);
+  insertToProcQ(proc->pid);
   sched();
   release(&ptable.lock);
 }

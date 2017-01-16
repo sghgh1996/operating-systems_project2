@@ -52,8 +52,8 @@ trap(struct trapframe *tf)
     if(cpunum() == 0){
       acquire(&tickslock);
       ticks++;
-      counter++;
       if(proc && proc->state == RUNNING){
+        counter++;
         proc->rtime++;
       }
       wakeup(&ticks);
