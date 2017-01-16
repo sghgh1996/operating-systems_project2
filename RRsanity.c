@@ -7,7 +7,7 @@
 #include "user.h"
 
 #define  N  10    // child number
-#define  print_num  10   // print number
+#define  print_num  100   // print number
 void
 do_test(void)
 {
