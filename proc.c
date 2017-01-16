@@ -447,6 +447,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   if(printRRQ == 1){
+    cprintf("%d", getProcQSize());
     for (int i = 0; i < getProcQSize(); i++) {
       cprintf("<%d>  ", popFromProcQ());
     }
