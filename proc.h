@@ -67,6 +67,7 @@ struct proc {
   int etime;                    //end time
   int ctime;                    //create time
   int rtime;                    //running time
+  int priority;                 //priority of processes=>high:2, medium:1, low:0
 };
 
 // this is queue declaration for RRFIFO

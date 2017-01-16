@@ -106,6 +106,7 @@ found:
   acquire(&tickslock);
   p->ctime = ticks;
   p->rtime = 0;
+  p->priority = 2;
   release(&tickslock);
 
   return p;
