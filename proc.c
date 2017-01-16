@@ -28,6 +28,31 @@ pinit(void)
     initlock(&ptable.lock, "ptable");
 }
 
+// insert pid into the queue
+void insertToProcQ(int pid){
+    backQ_index = (backQ_index + 1) % NPROC;
+    procQ[backQ_index] = pid;
+}
+// pop fromq queue
+int popFromProcQ(){
+    if(frontQ_index == backQ_index) // no process in Q
+        return -1;
+    frontQ_index = (frontQ_index + 1) % NPROC;
+    return procQ[frontQ_index];
+}
+//get the size of queue
+int getProcQSize(){
+    return backQ_index - frontQ_index;
+}
+//get proc via pid
+struct proc* getProc(int pid){
+    for(int i=0; i <NPROC; i++){
+        if(ptable.proc[i].pid == pid)
+            return &ptable.proc[i];
+    }
+    return null;
+}
+
 //PAGEBREAK: 32
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize
@@ -117,6 +142,7 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  insertToProcQ(p->pid);
 
   release(&ptable.lock);
 }
@@ -181,6 +207,7 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  insertToProcQ(np->pid);
 
   release(&ptable.lock);
 
@@ -340,13 +367,23 @@ void
 scheduler(void)
 {
   struct proc *p;
+  bool foundProc = false;
 
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
+
     acquire(&ptable.lock);
+    for (int i = frontQ_index; i < backQ_index; ++i) {
+        struct proc *tempProc;
+        tempProc = getProc(i);
+        if(tempProc != null){
+
+        }
+    }
+
+    // Loop over process table looking for process to run.
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -400,6 +437,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   proc->state = RUNNABLE;
+    insertToProcQ(proc->pid);
   sched();
   release(&ptable.lock);
 }
@@ -471,8 +509,10 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
-      p->state = RUNNABLE;
+    if(p->state == SLEEPING && p->chan == chan) {
+        p->state = RUNNABLE;
+        insertToProcQ(p->pid);
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -497,8 +537,10 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
-        p->state = RUNNABLE;
+      if(p->state == SLEEPING) {
+          p->state = RUNNABLE;
+          insertToProcQ(p->pid);
+      }
       release(&ptable.lock);
       return 0;
     }
