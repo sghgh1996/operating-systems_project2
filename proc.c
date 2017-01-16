@@ -21,6 +21,7 @@ extern void trapret(void);
 static void wakeup1(void *chan);
 
 int printRRQ = 1; // 1 : prints queue of round robin
+int policy = 1; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
 
 void
 pinit(void)
@@ -144,7 +145,8 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
-  insertToProcQ(p->pid);
+  if(policy == 1) // RRFIFO
+    insertToProcQ(p->pid);
 
   release(&ptable.lock);
 }
@@ -209,7 +211,8 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-  insertToProcQ(np->pid);
+  if(policy==1)
+    insertToProcQ(np->pid);
 
   release(&ptable.lock);
 
@@ -376,22 +379,7 @@ scheduler(void)
 
 
     acquire(&ptable.lock);
-    p = getProc(popFromProcQ());
-
-    if (p != 0) {
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
-    } else {
+    if(policy == 0){
       // Loop over process table looking for process to run.
       for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE)
@@ -409,6 +397,42 @@ scheduler(void)
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         proc = 0;
+      }
+    } else if(policy == 1) {
+      p = getProc(popFromProcQ());
+
+      if (p != 0) {
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&cpu->scheduler, p->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        proc = 0;
+      } else {
+        // Loop over process table looking for process to run.
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+          if (p->state != RUNNABLE)
+            continue;
+
+          // Switch to chosen process.  It is the process's job
+          // to release ptable.lock and then reacquire it
+          // before jumping back to us.
+          proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+          swtch(&cpu->scheduler, p->context);
+          switchkvm();
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          proc = 0;
+        }
       }
     }
     release(&ptable.lock);
@@ -453,7 +477,9 @@ yield(void)
     }
   }
   proc->state = RUNNABLE;
-  insertToProcQ(proc->pid);
+  if(policy==1)
+    insertToProcQ(proc->pid);
+
   sched();
   release(&ptable.lock);
 }
@@ -527,7 +553,8 @@ wakeup1(void *chan)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
-        insertToProcQ(p->pid);
+        if(policy == 1)
+          insertToProcQ(p->pid);
     }
 }
 
@@ -555,7 +582,8 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING) {
           p->state = RUNNABLE;
-          insertToProcQ(p->pid);
+          if(policy == 1)
+            insertToProcQ(p->pid);
       }
       release(&ptable.lock);
       return 0;
