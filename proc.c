@@ -437,6 +437,7 @@ scheduler(void)
     } else if(policy == 2){ // GRT
       // look over process table to find the highest valuable process
       double highest = 1000000000;
+      struct proc *leastProc = 0;
       struct proc *tempProc;
       for(tempProc = ptable.proc; tempProc < &ptable.proc[NPROC]; tempProc++){
         if (tempProc->state != RUNNABLE)
@@ -445,9 +446,13 @@ scheduler(void)
         double tempValue =
                 (double)(tempProc->rtime) / (double)(ticks - tempProc->ctime);
         if(tempValue < highest){
-          p = tempProc;
+          leastProc = tempProc;
+          highest = tempValue;
         }
       }
+
+      p = leastProc;
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -459,7 +464,7 @@ scheduler(void)
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
-      proc = 0;
+//      proc = 0;
     } else if(policy == 3) { // 3Q
 
     }
