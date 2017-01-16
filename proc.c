@@ -20,6 +20,8 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+int printRRQ = 1; // 1 : prints queue of round robin
+
 void
 pinit(void)
 {
@@ -444,6 +446,11 @@ void
 yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
+  if(printRRQ == 1){
+    for (int i = 0; i < getProcQSize(); i++) {
+      cprintf("<%d>  ", popFromProcQ());
+    }
+  }
   proc->state = RUNNABLE;
   insertToProcQ(proc->pid);
   sched();
