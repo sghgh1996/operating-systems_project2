@@ -455,7 +455,6 @@ scheduler(void)
       }
     } else if(policy == 2){ // GRT
       // look over process table to find the highest valuable process
-
       p = getHighestProc();
 
       // Switch to chosen process.  It is the process's job
@@ -469,20 +468,90 @@ scheduler(void)
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
-//      proc = 0;
+      proc = 0;
     } else if(policy == 3) { // 3Q
-      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if(p->priority == 0){ // low
+        int found = 0;
+        // priority high
+        for (p = ptable.proc;
+             p < &ptable.proc[NPROC] && p->priority == 2 && found == 0; p++) {
+            if(p->state != RUNNABLE)
+              continue;
 
-        } else if(p->priority == 1){ // medium
+            // look over process table to find the highest valuable process
+            p = getHighestProc();
+            found = 1;
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            swtch(&cpu->scheduler, p->context);
+            switchkvm();
 
-        } else if(p->priority == 2){ // high
-
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            proc = 0;
         }
-      }
+
+        // priority medium
+        if(found == 0){
+          p = getProc(popFromProcQ());
+
+          if (p != 0) {
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            swtch(&cpu->scheduler, p->context);
+            switchkvm();
+
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            proc = 0;
+          } else {
+            // Loop over process table looking for process to run.
+            for (p = ptable.proc; p < &ptable.proc[NPROC] && p->priority == 1; p++) {
+              if (p->state != RUNNABLE)
+                continue;
+
+              // Switch to chosen process.  It is the process's job
+              // to release ptable.lock and then reacquire it
+              // before jumping back to us.
+              found = 1;
+              proc = p;
+              switchuvm(p);
+              p->state = RUNNING;
+              swtch(&cpu->scheduler, p->context);
+              switchkvm();
+
+              // Process is done running for now.
+              // It should have changed its p->state before coming back.
+              proc = 0;
+            }
+          }
+        }
+
+        if(found == 0){
+          p = getHighestProc();
+
+          // Switch to chosen process.  It is the process's job
+          // to release ptable.lock and then reacquire it
+          // before jumping back to us.
+          proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+          swtch(&cpu->scheduler, p->context);
+          switchkvm();
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          proc = 0;
+        }
     }
     release(&ptable.lock);
-
   }
 }
 
@@ -517,13 +586,12 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   if(printRRQ == 1){
-    cprintf("%d", getProcQSize());
     for (int i = 0; i < getProcQSize(); i++) {
       cprintf("<%d>  ", popFromProcQ());
     }
   }
   proc->state = RUNNABLE;
-  if(policy == 1 || (policy == 3 && p->priority == 1)) // RRFIFO || 3Q and priority = 1
+  if(policy == 1 || (policy == 3 && proc->priority == 1)) // RRFIFO || 3Q and priority = 1
     insertToProcQ(proc->pid);
 
   sched();
@@ -628,7 +696,7 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING) {
           p->state = RUNNABLE;
-          if(policy == 1)
+          if(policy == 1 || (policy == 3 && p->priority == 1))
             insertToProcQ(p->pid);
       }
       release(&ptable.lock);
