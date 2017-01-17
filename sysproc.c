@@ -90,8 +90,6 @@ sys_uptime(void)
   return xticks;
 }
 
-
-
 //my
 int sys_getppid(void){
 
@@ -103,4 +101,10 @@ int sys_getppid(void){
 //get performance data
 int sys_getPerformanceData(void){
   return wait2();
+}
+
+// nice syscall()
+int sys_nice(void){
+    if(proc->priority > 0)
+        proc->priority--;
 }

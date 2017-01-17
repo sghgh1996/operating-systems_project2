@@ -28,6 +28,7 @@ int getppid(void);
 //end my
 //get performance data
 int getPerformanceData(int*, int*);
+int nice(void);
 
 
 

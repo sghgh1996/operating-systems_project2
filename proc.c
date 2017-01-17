@@ -20,8 +20,8 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-int printRRQ = 1; // 1 : prints queue of round robin for frrTest
-int policy = 1; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
+int printRRQ = 0; // 1 : prints queue of round robin for frrTest
+int policy = 2; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
 
 void
 pinit(void)
@@ -41,7 +41,6 @@ int popFromProcQ(){
     if(frontQ_index == backQ_index) // no process in Q
         return -1;
     frontQ_index = (frontQ_index + 1) % NPROC;
-    cprintf("\npop pid: %d\n", procQ[frontQ_index]);
     return procQ[frontQ_index];
 }
 //get the size of queue
@@ -49,9 +48,9 @@ int getProcQSize(){
     return backQ_index - frontQ_index;
 }
 //get proc via pid
-struct proc* getProc(int pid){
-    for(int i=0; i <NPROC; i++){
-        if(ptable.proc[i].pid == pid) {
+struct proc* getProc(int p_id){
+    for(int i = 0; i < NPROC; i++){
+        if(ptable.proc[i].pid == p_id){
             return &ptable.proc[i];
         }
     }
@@ -59,21 +58,22 @@ struct proc* getProc(int pid){
 }
 //get least value proc
 struct proc* getHighestProc(){
-  double highest = 1000000000;
-  struct proc *leastProc = 0;
+  double highest = 10000000;
+  int temp_pid = -1;
   struct proc *tempProc;
   for(tempProc = ptable.proc; tempProc < &ptable.proc[NPROC]; tempProc++){
     if (tempProc->state != RUNNABLE)
       continue;
 
     double tempValue =
-            (double)(tempProc->rtime) / (double)(ticks - tempProc->ctime);
+            (double)(tempProc->rtime) / ((double)ticks - (double)tempProc->ctime);
     if(tempValue < highest){
-      leastProc = tempProc;
+      temp_pid = tempProc->pid;
       highest = tempValue;
     }
   }
-  return leastProc;
+
+  return getProc(temp_pid);
 }
 // print all the processes in procQ
 void printProcQ(){
@@ -433,7 +433,7 @@ scheduler(void)
     } else if(policy == 1) { // FIFO RR
       int popFromQ = popFromProcQ();
 
-      if (popFromQ != -1) {
+      if(popFromQ != -1) {
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
@@ -473,20 +473,36 @@ scheduler(void)
       }
     } else if(policy == 2){ // GRT
       // look over process table to find the highest valuable process
-      p = getHighestProc();
+      double highest = -1;
+      int temp_pid = -1;
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          if (p->state != RUNNABLE)
+               continue;
+          cprintf("p : %d\n", p->pid);
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, p->context);
-      switchkvm();
+          double tempValue =
+                  (double)(p->rtime) / ((double)ticks - (double)p->ctime);
+          if(tempValue < highest || highest == -1){
+              temp_pid = p->pid;
+              highest = tempValue;
+          }
+      }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+      if(temp_pid != -1) {
+          // Switch to chosen process.  It is the process's job
+          // to release ptable.lock and then reacquire it
+          // before jumping back to us.
+          p = getProc(temp_pid);
+          proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+          swtch(&cpu->scheduler, p->context);
+          switchkvm();
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          proc = 0;
+      }
     } else if(policy == 3) { // 3Q
         int found = 0;
         // priority high

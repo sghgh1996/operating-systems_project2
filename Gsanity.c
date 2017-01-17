@@ -28,9 +28,10 @@ do_test(void)
     }else if (pid == 0){ // child
         print();
         exit();
-    }else{ // parent
-        wait();
+    } else { // parent
         print();
+        wait();
+        exit();
     }
 }
 

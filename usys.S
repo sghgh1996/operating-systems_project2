@@ -34,3 +34,4 @@ SYSCALL(getppid)
 //end my
 //get performance data
 SYSCALL(getPerformanceData)
+SYSCALL(nice)

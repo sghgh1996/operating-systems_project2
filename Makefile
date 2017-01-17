@@ -182,6 +182,7 @@ UPROGS=\
 	_waittest\
 	_RRsanity\
 	_frrTest\
+	_Gsanity\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

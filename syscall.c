@@ -103,7 +103,7 @@ extern int sys_getppid(void);
 //end my
 //get performance
 extern int sys_getPerformanceData(void);
-
+extern int sys_nice(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -129,6 +129,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 /*my*/[SYS_getppid] sys_getppid,/*end my*/
 [SYS_getPerformanceData]    sys_getPerformanceData,
+[SYS_nice]    sys_nice,
 };
 
 void
