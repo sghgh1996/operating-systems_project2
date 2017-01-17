@@ -20,8 +20,8 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-int printRRQ = 0; // 1 : prints queue of round robin
-int policy = 0; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
+int printRRQ = 1; // 1 : prints queue of round robin for frrTest
+int policy = 1; // 0 : RR, 1 : FIFORR, 2 : GRT, 3 : 3Q
 
 void
 pinit(void)
@@ -71,8 +71,15 @@ struct proc* getHighestProc(){
       highest = tempValue;
     }
   }
-
   return leastProc;
+}
+// print all the processes in procQ
+void printProcQ(){
+    if(printRRQ == 1){
+        for (int i = 0; i < getProcQSize(); i++) {
+            cprintf("<%d>  ", popFromProcQ());
+        }
+    }
 }
 
 //PAGEBREAK: 32
@@ -231,9 +238,10 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-  if(policy==1 || (policy==3 && np->priority == 1)) //
-    insertToProcQ(np->pid);
-
+  if(policy == 1 || (policy==3 && np->priority == 1)) {
+      insertToProcQ(np->pid);
+      cprintf("forked pid : %d\n", np->pid);
+  }
   release(&ptable.lock);
 
   return pid;
@@ -403,6 +411,7 @@ scheduler(void)
       for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE)
           continue;
+        cprintf("p : %d\n", p->pid);
 
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
@@ -410,6 +419,7 @@ scheduler(void)
         proc = p;
         switchuvm(p);
         p->state = RUNNING;
+        p->count = 0;
         swtch(&cpu->scheduler, p->context);
         switchkvm();
 
@@ -418,12 +428,15 @@ scheduler(void)
         proc = 0;
       }
     } else if(policy == 1) { // FIFO RR
-      p = getProc(popFromProcQ());
+      int popFromQ = popFromProcQ();
 
-      if (p != 0) {
+      if (popFromQ != -1) {
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
+
+        p = getProc(popFromQ);
+
         proc = p;
         switchuvm(p);
         p->state = RUNNING;
@@ -585,11 +598,7 @@ void
 yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
-  if(printRRQ == 1){
-    for (int i = 0; i < getProcQSize(); i++) {
-      cprintf("<%d>  ", popFromProcQ());
-    }
-  }
+
   proc->state = RUNNABLE;
   if(policy == 1 || (policy == 3 && proc->priority == 1)) // RRFIFO || 3Q and priority = 1
     insertToProcQ(proc->pid);

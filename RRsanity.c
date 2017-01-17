@@ -7,13 +7,13 @@
 #include "user.h"
 
 #define  N  10    // child number
-#define  print_num  100   // print number
+#define  print_num  10   // print number
 void
 do_test(void)
 {
     int n, pid;
 
-    printf(1, "\n----------3.1 test started.----------\n\n");
+    printf(1, "\n----------3.1 test started. parent_id : %d----------\n\n", getpid());
 
     for(n=0; n<N; n++){
         pid = fork();

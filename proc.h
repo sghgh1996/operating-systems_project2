@@ -68,6 +68,9 @@ struct proc {
   int ctime;                    //create time
   int rtime;                    //running time
   int priority;                 //priority of processes=>high:2, medium:1, low:0
+
+  // a counter for any process ,when running ++
+  int count;
 };
 
 // this is queue declaration for RRFIFO
