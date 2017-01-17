@@ -55,7 +55,7 @@ trap(struct trapframe *tf)
       if(proc && proc->state == RUNNING){
         proc->rtime++;
         proc->count++;
-           cprintf("\np: %d, proc->count : %d\n", proc->pid, proc->count);
+//           cprintf("\np: %d, proc->count : %d\n", proc->pid, proc->count);
       }
       wakeup(&ticks);
       release(&tickslock);

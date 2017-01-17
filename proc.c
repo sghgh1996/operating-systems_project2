@@ -41,6 +41,7 @@ int popFromProcQ(){
     if(frontQ_index == backQ_index) // no process in Q
         return -1;
     frontQ_index = (frontQ_index + 1) % NPROC;
+    cprintf("\npop pid: %d\n", procQ[frontQ_index]);
     return procQ[frontQ_index];
 }
 //get the size of queue
@@ -50,8 +51,9 @@ int getProcQSize(){
 //get proc via pid
 struct proc* getProc(int pid){
     for(int i=0; i <NPROC; i++){
-        if(ptable.proc[i].pid == pid)
+        if(ptable.proc[i].pid == pid) {
             return &ptable.proc[i];
+        }
     }
     return 0;
 }
@@ -76,6 +78,7 @@ struct proc* getHighestProc(){
 // print all the processes in procQ
 void printProcQ(){
     if(printRRQ == 1){
+        cprintf("\n");
         for (int i = 0; i < getProcQSize(); i++) {
             cprintf("<%d>  ", popFromProcQ());
         }
@@ -240,7 +243,7 @@ fork(void)
   np->state = RUNNABLE;
   if(policy == 1 || (policy==3 && np->priority == 1)) {
       insertToProcQ(np->pid);
-      cprintf("forked pid : %d\n", np->pid);
+//      cprintf("forked pid : %d\n", np->pid);
   }
   release(&ptable.lock);
 
@@ -434,10 +437,12 @@ scheduler(void)
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
-
         p = getProc(popFromQ);
 
         proc = p;
+        printProcQ();
+        cprintf("p : %d, Qsize : %d\n", p->pid, getProcQSize());
+
         switchuvm(p);
         p->state = RUNNING;
         swtch(&cpu->scheduler, p->context);

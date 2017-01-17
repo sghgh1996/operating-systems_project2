@@ -23,7 +23,7 @@ do_test(void)
             break;
         if(pid == 0) { // child
             for (int i = 1; i <= wait_num; i++) {
-                ;
+                printf(1, "n : %d, child %d\n", n, getpid());
             }
             exit();
         }
